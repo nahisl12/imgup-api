@@ -22,7 +22,7 @@ loginRouter.post("/", async (req, res) => {
 
     const accessToken = jwt.sign(userToSign, process.env.TOKEN_SECRET);
 
-    res.status(200).json({ accessToken: accessToken });
+    res.status(200).json({ accessToken: accessToken, username: user.username }); // send back the token with the username/id in it
   } catch (error) {
     res.status(401).json("Invalid Username or Password");
   }

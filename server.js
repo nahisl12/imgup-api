@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 
 const usersRouter = require("./controllers/users");
 const loginRouter = require("./controllers/login");
+const imageUploadRouter = require("./controllers/imageUpload");
 
 const app = express();
 app.use(express.json());
@@ -23,6 +24,7 @@ db.once("open", () => console.log("Successfully connected to Mongoose"));
 
 app.use("/api/users", usersRouter); // user/register endpoint
 app.use("/api/login", loginRouter); // login endpoint
+app.use("/api/upload", imageUploadRouter); // image uploading endpoint
 
 app.listen(process.env.PORT, () => {
   console.log(`app started on port ${process.env.PORT}`);
