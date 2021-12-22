@@ -1,4 +1,4 @@
-const imageUploadRouter = require("express").Router();
+const ImageRouter = require("express").Router();
 const aws = require("aws-sdk");
 const { response } = require("express");
 require("dotenv").config();
@@ -45,8 +45,26 @@ const upload = multer({
   }),
 });
 
-imageUploadRouter.post(
-  "/",
+// get all images belonging to this user
+ImageRouter.get("/userImages", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    // find images that have the user id in it
+    // Might be better to do this by getting the image ids in the user from the decoded token and pull images
+    // in the image database that match it
+    const userImages = await Image.find({ user: user._id });
+
+    res.status(201).json(userImages);
+  } catch (error) {
+    res.json(error);
+  }
+});
+
+// upload image endpoint
+ImageRouter.post(
+  "/upload",
   auth,
   upload.single("image"),
   async (req, res, next) => {
@@ -81,4 +99,4 @@ imageUploadRouter.post(
   }
 );
 
-module.exports = imageUploadRouter;
+module.exports = ImageRouter;
