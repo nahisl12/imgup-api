@@ -22,6 +22,10 @@ const UserSchema = new mongoose.Schema({
   joined: {
     type: Date,
   },
+  folders: {
+    type: Array,
+    default: "default",
+  },
   images: {
     type: Array,
   },

@@ -62,6 +62,68 @@ ImageRouter.get("/userImages", auth, async (req, res) => {
   }
 });
 
+// End point for handling the editing of image data e.g status/folder its in
+ImageRouter.put("/edit", auth, async (req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId);
+
+  try {
+    const imageId = req.body.imageId;
+
+    if (user._id) {
+      // check if the image exists using the id
+      const image = await Image.findByIdAndUpdate(
+        imageId,
+        {
+          folder: req.body.folder,
+          status: req.body.status,
+        },
+        { new: true }
+      );
+      res.status(200).json({ message: "The image was updated successfully" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// Delete image request
+ImageRouter.delete("/delete", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    const imageId = req.body.imageId;
+
+    if (user._id) {
+      // find the image by id and get the link to the picture
+      const image = await Image.findById(imageId);
+      const imageUrl = image.url; // get the url from the database record
+
+      // const imageUrlSplit = imageUrl.split("/");
+      const key = image.key;
+
+      const imageToDelete = await s3
+        .deleteObject({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: key,
+        })
+        .promise();
+
+      const userImages = user.images;
+      const deleteUserImage = await User.findOneAndUpdate(
+        { _id: userId },
+        { $pull: { images: image._id } }
+      ); // this is used to remove the imageId from the user images array
+
+      const deleteImage = await Image.findByIdAndDelete(imageId); // delete the image entry
+
+      res.status(200).json({ message: "The image was successfully deleted" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 // upload image endpoint
 ImageRouter.post(
   "/upload",
@@ -80,6 +142,7 @@ ImageRouter.post(
       // create image object and store in database
       const image = new Image({
         url: req.file.location,
+        key: req.file.key,
         author: req.user.username,
         user: user._id,
         folder: "default",
