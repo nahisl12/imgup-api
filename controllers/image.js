@@ -45,6 +45,18 @@ const upload = multer({
   }),
 });
 
+// get all public images
+ImageRouter.get("/", async (req, res) => {
+  try {
+    const allImages = await Image.find({ status: "public" });
+    if (allImages.length >= 1) {
+      res.json(allImages);
+    }
+  } catch (error) {
+    res.json({ message: error });
+  }
+});
+
 // get all images belonging to this user
 ImageRouter.get("/userImages", auth, async (req, res) => {
   try {

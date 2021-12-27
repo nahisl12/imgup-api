@@ -35,6 +35,7 @@ usersRouter.put("/folders/new", auth, async (req, res) => {
   }
 });
 
+// delete folder route
 usersRouter.delete("/folders/delete", auth, async (req, res) => {
   try {
     const userId = req.user.id;
