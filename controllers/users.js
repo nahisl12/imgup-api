@@ -1,7 +1,10 @@
 const usersRouter = require("express").Router();
+require("dotenv").config();
 const User = require("../models/user");
+const Image = require("../models/image");
 const bcrypt = require("bcrypt");
 const auth = require("../middleware/auth");
+const { upload, deleteFromAws } = require("./Helpers/AwsRequests");
 
 // get folders the user has from user db
 usersRouter.get("/folders", auth, async (req, res) => {
@@ -35,7 +38,7 @@ usersRouter.put("/folders/new", auth, async (req, res) => {
   }
 });
 
-// delete folder route
+// delete folder route - delete images inside folders as well
 usersRouter.delete("/folders/delete", auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -43,15 +46,29 @@ usersRouter.delete("/folders/delete", auth, async (req, res) => {
     const folder = req.body.folderName;
 
     if (user._id) {
+      const removeFolderImages = await Image.find({ folder: folder });
+
+      const imagesToDelete = removeFolderImages.map(async (image) => {
+        const key = image.key;
+
+        const deleteInAws = await deleteFromAws(key);
+        // this is used to remove the imageId from the user images array
+        const deleteUserImage = await User.findOneAndUpdate(
+          { _id: userId },
+          { $pull: { images: image._id } }
+        );
+        const deleteImage = await Image.findByIdAndDelete(image._id); // delete the image entry
+      });
+
       const deleteFolderFromUser = await User.findOneAndUpdate(
         { _id: userId },
         { $pull: { folders: folder } }
-      ); // this is used to remove the imageId from the user images array
+      );
 
       res.json("Folder successfully deleted");
     }
   } catch (error) {
-    console.log(error);
+    res.status(401).json(error);
   }
 });
 
@@ -74,11 +91,9 @@ usersRouter.post("/", async (req, res) => {
       joined: Date.now(),
     });
 
-    // connect to mongo
     const savedUser = await user.save(user);
-    // save do whatever is needed to .save to the mongodb
+
     res.json(savedUser);
-    // send a response saying if success or failure
   } catch (error) {
     res.status(400).json("Error creating user");
   }
