@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     lowercase: true,
     required: true,
+    unique: true,
     match: [/^[a-zA-Z0-9]+$/, "is invalid"],
     index: true,
   },

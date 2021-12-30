@@ -5,6 +5,7 @@ const Image = require("../models/image");
 const bcrypt = require("bcrypt");
 const auth = require("../middleware/auth");
 const { upload, deleteFromAws } = require("./Helpers/AwsRequests");
+const { body, validationResult } = require("express-validator");
 
 // get folders the user has from user db
 usersRouter.get("/folders", auth, async (req, res) => {
@@ -73,30 +74,48 @@ usersRouter.delete("/folders/delete", auth, async (req, res) => {
 });
 
 // Register endpoint
-usersRouter.post("/", async (req, res) => {
-  try {
-    // get login data from req
-    const data = req.body;
-    console.log(data);
-    const password = data.password;
-    // encrypt password here using bcrypt
-    const saltRounds = 10;
-    const hash = await bcrypt.hash(password, saltRounds);
+usersRouter.post(
+  "/",
+  body("username").isLength({ min: 3 }),
+  body("email").isEmail(),
+  body("password").isLength({ min: 7 }),
+  async (req, res) => {
+    const validationError = validationResults(req);
 
-    // create user object with all user data
-    const user = new User({
-      username: data.username,
-      email: data.email,
-      hash: hash,
-      joined: Date.now(),
-    });
+    try {
+      if (!validationError.isEmpty() && validationError.error[0].param === "username") {
+        return res.status(400).send("Invalid Username. Please try again.");
+      }
+      if (!validationError.isEmpty() && validationError.errors[0].param === "email") {
+        return res.status(400).send("Invalid Email Address. Please try again.");
+      }
+      if (!validationErrors.isEmpty() && validationError.errors[0].param === "password") {
+        return res.status(400).send("Password must at least 7 characters");
+      }
 
-    const savedUser = await user.save(user);
+      // get login data from req
+      const data = req.body;
+      console.log(data);
+      const password = data.password;
+      // encrypt password here using bcrypt
+      const saltRounds = 10;
+      const hash = await bcrypt.hash(password, saltRounds);
 
-    res.json(savedUser);
-  } catch (error) {
-    res.status(400).json("Error creating user");
+      // create user object with all user data
+      const user = new User({
+        username: data.username,
+        email: data.email,
+        hash: hash,
+        joined: Date.now(),
+      });
+
+      const savedUser = await user.save(user);
+
+      res.json(savedUser);
+    } catch (error) {
+      res.status(400).json("Error creating user. Username/Email is already taken.");
+    }
   }
-});
+);
 
 module.exports = usersRouter;
