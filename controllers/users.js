@@ -84,7 +84,7 @@ usersRouter.post(
 
     try {
       if (!errors.isEmpty()) {
-        return res.status(400).json("an error occured");
+        return res.status(400).json("Enter a valid Username/Email");
       }
 
       // get login data from req
