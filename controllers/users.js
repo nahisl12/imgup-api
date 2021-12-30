@@ -80,17 +80,11 @@ usersRouter.post(
   body("email").isEmail(),
   body("password").isLength({ min: 7 }),
   async (req, res) => {
-    const validationError = validationResult(req);
+    const errors = validationResult(req);
 
     try {
-      if (!validationError.isEmpty() && validationError.error[0].param === "username") {
-        return res.status(400).json("Invalid Username. Please try again.");
-      }
-      if (!validationError.isEmpty() && validationError.errors[0].param === "email") {
-        return res.status(400).json("Invalid Email Address. Please try again.");
-      }
-      if (!validationErrors.isEmpty() && validationError.errors[0].param === "password") {
-        return res.status(400).json("Password must at least 7 characters");
+      if (!errors.isEmpty()) {
+        return res.status(400).json("an error occured");
       }
 
       // get login data from req
